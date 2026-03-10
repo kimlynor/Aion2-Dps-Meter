@@ -33,10 +33,43 @@ cd Aion2-Dps-Meter
 
 ### 위 빌드하기는 일반 사용자와는 무관합니다.
 
-1. npcap (https://npcap.com/#download) 를 설치합니다. (Install Npcap in WinPcap API-compatible Mode 필수 체크)
-2. [이동](https://github.com/TK-open-public/Aion2-Dps-Meter/releases) 해당 링크에서 aion2meter4j-x.x.x.msi을 다운받아 설치합니다.
-3. **아이온이 켜져있는 상태라면 먼저 캐릭터 선택창으로 이동합니다**.
-4. 프로그램이 설치된 위치 (기본 설치 경로 C:\Program Files\aion2meter4j)의 aion2meter4j.exe 를 **반드시 관리자 권한으로 실행합니다.**
+### ✅ Step 1 — Npcap 설치 (최초 1회)
+
+> 이미 설치되어 있다면 건너뛰세요.
+
+1. [Npcap 다운로드 페이지](https://npcap.com/#download) 에서 **Npcap Installer** 다운로드
+2. 설치 실행 후 아래 옵션 확인
+
+| 옵션 | 설정 |
+|------|------|
+| ✅ Install Npcap in WinPcap API-compatible Mode | **반드시 체크** |
+| ✅ Support loopback traffic | **VPN/가속기 사용자는 체크** |
+| ❌ Restrict Npcap driver's access to Administrators only | **체크 해제** |
+
+3. 설치 완료 후 **PC 재부팅** 권장
+
+---
+
+### ✅ Step 2 — 미터기 설치
+
+1. 아래 [다운로드](#다운로드) 섹션에서 **aion2meter4j-0.2.x.msi** 다운로드
+2. MSI 파일 실행 → 설치 완료
+3. 기본 설치 경로: `C:\Program Files\aion2meter4j\`
+
+---
+
+### ✅ Step 3 — 실행
+
+1. **아이온2를 먼저 실행**하고 캐릭터 선택창까지 진입
+2. `C:\Program Files\aion2meter4j\aion2meter4j.exe` 를 **우클릭 → 관리자 권한으로 실행**
+
+> 💡 매번 우클릭이 번거롭다면: aion2meter4j.exe 우클릭 → 속성 → 호환성 탭 → **"관리자 권한으로 이 프로그램 실행"** 체크
+
+---
+
+### ✅ Step 4 — 확인
+
+미터기 UI가 나타나면 성공입니다.
 
 ![image](./readme-asset/firstUI.png)
 
@@ -120,7 +153,9 @@ cd Aion2-Dps-Meter
 
 ## 다운로드
 
-### [이동](https://github.com/TK-open-public/Aion2-Dps-Meter/releases)
+### [👉 최신 버전 다운로드](https://github.com/kimlynor/Aion2-Dps-Meter/releases/latest)
+
+> **aion2meter4j-0.2.x.msi** 파일 하나만 받아서 설치하면 됩니다. Java 별도 설치 불필요.
 
 딜을 잘 못넣는 유저가 있더라도 불평하지마시고 그럴수도있지 라는 마음으로 넘어가주세요
 
