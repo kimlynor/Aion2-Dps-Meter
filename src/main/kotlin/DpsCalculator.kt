@@ -461,6 +461,8 @@ class DpsCalculator(private val dataStorage: DataStorage) {
 
         val SKILL_CODES: IntArray =
             intArrayOf(
+                // 정령 기본공격 (불/물/바람/땅/고대 정령) → 정령성으로 귀속
+                100014, 100018, 100024, 100028, 100032, 100041, 100045,
                 100051,
                 100055,
                 17010000,
@@ -852,6 +854,17 @@ class DpsCalculator(private val dataStorage: DataStorage) {
     private var mode: Mode = Mode.BOSS_ONLY
     private var currentTarget: Int = 0
 
+    // 닉네임별 전투력 캐시 (CombatPowerFetcher 비동기 결과 저장)
+    private val combatPowerByNickname = java.util.concurrent.ConcurrentHashMap<String, Int?>()
+
+    // 이전 전투 기록 (최대 5개)
+    private val battleHistory = mutableListOf<DpsData>()
+    private val MAX_HISTORY = 5
+
+    fun getHistoryCount(): Int = battleHistory.size
+
+    fun getHistory(index: Int): DpsData? = battleHistory.getOrNull(index)
+
     fun setMode(mode: Mode) {
         this.mode = mode
         //모드 변경시 이전기록 초기화?
@@ -881,29 +894,58 @@ class DpsCalculator(private val dataStorage: DataStorage) {
         dpsData.targetName = targetData.second
         val battleTime = targetInfoMap[currentTarget]?.parseBattleTime() ?: 0
         val nicknameData = dataStorage.getNickname()
-        var totalDamage = 0.0
         if (battleTime == 0L) {
             return dpsData
         }
-        pdpMap[currentTarget]!!.forEach lastPdpLoop@{ pdp ->
-            totalDamage += pdp.getDamage()
+        val currentTargetPackets = pdpMap[currentTarget] ?: return dpsData  // 리셋 직후 크래시 방지
+        currentTargetPackets.forEach lastPdpLoop@{ pdp ->
             val uid = dataStorage.getSummonData()[pdp.getActorId()] ?: pdp.getActorId()
-            val nickname:String = nicknameData[uid]
-                ?: nicknameData[dataStorage.getSummonData()[uid]?:uid]
+            val nickname: String = nicknameData[uid]
+                ?: nicknameData[dataStorage.getSummonData()[uid] ?: uid]
                 ?: uid.toString()
             if (!dpsData.map.containsKey(uid)) {
-                dpsData.map[uid] = PersonalData(nickname = nickname)
+                val cp = combatPowerByNickname[nickname]
+                dpsData.map[uid] = PersonalData(nickname = nickname, combatPower = cp)
+                // 실제 닉네임(숫자 uid 아님)일 때만 전투력 비동기 조회
+                if (nickname != uid.toString() && !combatPowerByNickname.containsKey(nickname)) {
+                    combatPowerByNickname[nickname] = null  // 조회 중 표시 (중복 요청 방지)
+                    CombatPowerFetcher.fetchAsync(nickname) { cp ->
+                        combatPowerByNickname[nickname] = cp
+                    }
+                }
+            }
+            // 닉네임이 uid 숫자였다가 나중에 실제 닉네임이 들어오면 업데이트 (Bug 1 수정)
+            val currentEntry = dpsData.map[uid]!!
+            if (currentEntry.nickname == uid.toString()) {
+                val freshNick = nicknameData[uid] ?: nicknameData[dataStorage.getSummonData()[uid] ?: uid]
+                if (freshNick != null) {
+                    currentEntry.nickname = freshNick
+                    // 닉네임이 확정되면 전투력도 즉시 업데이트 + 조회 트리거
+                    currentEntry.combatPower = combatPowerByNickname[freshNick]
+                    if (!combatPowerByNickname.containsKey(freshNick)) {
+                        combatPowerByNickname[freshNick] = null
+                        CombatPowerFetcher.fetchAsync(freshNick) { cp ->
+                            combatPowerByNickname[freshNick] = cp
+                        }
+                    }
+                }
+            } else {
+                // 닉네임이 이미 확정된 경우에도 캐시에서 전투력 최신값 반영
+                currentEntry.combatPower = combatPowerByNickname[currentEntry.nickname]
             }
             pdp.setSkillCode(inferOriginalSkillCode(pdp.getSkillCode1()) ?: pdp.getSkillCode1())
-            dpsData.map[uid]!!.processPdp(pdp)
-            if (dpsData.map[uid]!!.job == "") {
+            currentEntry.processPdp(pdp)
+            if (currentEntry.job == "") {
                 val origSkillCode = inferOriginalSkillCode(pdp.getSkillCode1()) ?: -1
                 val job = JobClass.convertFromSkill(origSkillCode)
-                if (job != null && dataStorage.getSummonData()[uid] == null) {
-                    dpsData.map[uid]!!.job = job.className
+                // 닉네임이 확인된 플레이어만 직업 할당 → 소환수가 별도 인원으로 뜨는 버그 수정 (Bug 2 수정)
+                if (job != null && dataStorage.getSummonData()[uid] == null && nicknameData[uid] != null) {
+                    currentEntry.job = job.className
                 }
             }
         }
+
+        // job 없는 항목(소환수/NPC 잔여) 먼저 제거 후 DPS 계산 (Bug 2, 3 수정)
         val iterator = dpsData.map.iterator()
         while (iterator.hasNext()) {
             val (_, data) = iterator.next()
@@ -911,19 +953,36 @@ class DpsCalculator(private val dataStorage: DataStorage) {
                 iterator.remove()
             } else {
                 data.dps = data.amount / battleTime * 1000
-                data.damageContribution = data.amount / totalDamage * 100
             }
         }
+
+        // 필터링 후 남은 플레이어 합산으로 기여도 100% 보장 (Bug 3 수정)
+        val knownTotalDamage = dpsData.map.values.sumOf { it.amount }
+        if (knownTotalDamage > 0) {
+            dpsData.map.values.forEach { data ->
+                data.damageContribution = data.amount / knownTotalDamage * 100
+            }
+        }
+
         dpsData.battleTime = battleTime
         return dpsData
     }
 
     private fun decideTarget(): Pair<Int, String> {
-        val target: Int = targetInfoMap.maxByOrNull { it.value.damagedAmount() }?.key ?: 0
+        val now = System.currentTimeMillis()
+        val recentThresholdMs = 10_000L  // 10초 이내에 피해받은 타겟을 "활성 타겟"으로 간주
+
+        // 1순위: 최근 10초 이내 피해받은 타겟 중 누적 피해 최대 (FFXIV ACT, Lost Ark 방식)
+        // 2순위: 활성 타겟 없으면 전체 중 누적 피해 최대 (기존 방식 폴백)
+        val recentTargets = targetInfoMap.filter { now - it.value.lastDamageTime() <= recentThresholdMs }
+        val target: Int = if (recentTargets.isNotEmpty()) {
+            recentTargets.maxByOrNull { it.value.damagedAmount() }?.key ?: 0
+        } else {
+            targetInfoMap.maxByOrNull { it.value.damagedAmount() }?.key ?: 0
+        }
         var targetName = ""
         currentTarget = target
         dataStorage.setCurrentTarget(target)
-        //데미지 누계말고도 건수누적방식도 추가하는게 좋을지도? 지금방식은 정복같은데선 타겟변경에 너무 오랜시간이듬
         if (dataStorage.getMobData().containsKey(target)) {
             val mobCode = dataStorage.getMobData()[target]
             if (dataStorage.getMobCodeData().containsKey(mobCode)) {
@@ -947,6 +1006,13 @@ class DpsCalculator(private val dataStorage: DataStorage) {
     }
 
     fun resetDataStorage() {
+        // 초기화 전 현재 전투 데이터를 히스토리에 스냅샷 저장
+        val snapshot = getDps()
+        if (snapshot.map.isNotEmpty()) {
+            if (battleHistory.size >= MAX_HISTORY) battleHistory.removeFirst()
+            battleHistory.add(snapshot)
+            logger.info("이전 전투 기록 저장됨 (히스토리 {}개)", battleHistory.size)
+        }
         dataStorage.flushDamageStorage()
         targetInfoMap.clear()
         logger.info("대상 데미지 누적 데이터 초기화 완료")

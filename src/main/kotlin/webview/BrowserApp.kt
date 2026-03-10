@@ -1,5 +1,6 @@
 package com.tbread.webview
 
+import com.tbread.AToolFetcher
 import com.tbread.DpsCalculator
 import com.tbread.config.HotkeyHandler
 import com.tbread.entity.DpsData
@@ -70,7 +71,7 @@ class BrowserApp(private val dpsCalculator: DpsCalculator) : Application() {
 
     private val debugMode = false
 
-    private val version = "0.2.6"
+    private val version = "0.2.8"
 
 
     override fun start(stage: Stage) {
@@ -112,6 +113,9 @@ class BrowserApp(private val dpsCalculator: DpsCalculator) : Application() {
         stage.isAlwaysOnTop = true
         stage.title = "Aion2 Dps Overlay"
 
+        // 아툴 전투력 조회용 숨김 WebView 초기화 (JavaFX 스레드에서 실행됨)
+        AToolFetcher.initialize()
+
         stage.show()
         HotkeyHandler.registerCallback {
             Platform.runLater{
@@ -142,6 +146,14 @@ class BrowserApp(private val dpsCalculator: DpsCalculator) : Application() {
 
     fun getVersion():String{
         return version
+    }
+
+    fun getHistoryCount(): Int {
+        return dpsCalculator.getHistoryCount()
+    }
+
+    fun getHistoryData(index: Int): String {
+        return Json.encodeToString(dpsCalculator.getHistory(index))
     }
 
 }

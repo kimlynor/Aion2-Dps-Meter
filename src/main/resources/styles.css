@@ -166,6 +166,15 @@
       align-items: center;
       gap: 8px;
     }
+
+    .combatPower {
+      color: #87ceeb;
+      font-size: 11px;
+      font-weight: bold;
+      text-shadow: var(--text-shadow);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
   }
 }
 .battleTime {
@@ -443,6 +452,101 @@
       padding: 8px;
       width: 100%;
       cursor: pointer;
+    }
+  }
+}
+
+.historyPanel {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 8px);
+  width: 360px;
+  max-height: 600px;
+  overflow-y: auto;
+  background: rgb(12, 22, 40);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--rounded);
+  color: var(--text-color);
+  display: none;
+  z-index: 1200;
+
+  &.open {
+    display: block;
+  }
+
+  .historyHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--panel-border);
+
+    .historyTitle {
+      font-size: 16px;
+      font-weight: bold;
+    }
+  }
+
+  .historyBody {
+    padding: 12px;
+  }
+
+  .historyEmpty {
+    text-align: center;
+    opacity: 0.5;
+    font-size: 13px;
+    padding: 16px 0;
+  }
+
+  .historyCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+
+    .historyCardHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+
+      .historyCardTarget {
+        font-size: 13px;
+        font-weight: bold;
+        color: var(--title, #cde);
+      }
+
+      .historyCardTime {
+        font-size: 12px;
+        opacity: 0.6;
+      }
+    }
+
+    .historyRow {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 3px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+
+      .historyRowName {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .historyRowDps {
+        flex: 0 0 90px;
+        text-align: right;
+        color: var(--dps, #29ff6f);
+      }
+
+      .historyRowContrib {
+        flex: 0 0 44px;
+        text-align: right;
+        opacity: 0.7;
+      }
     }
   }
 }

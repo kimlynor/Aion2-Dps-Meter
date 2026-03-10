@@ -11,7 +11,8 @@ data class PersonalData(
     @Transient var amount: Double = 0.0,
     @Required var damageContribution: Double = 0.0,
     @Transient val analyzedData: MutableMap<Int, AnalyzedSkill> = mutableMapOf(),
-    val nickname: String
+    var nickname: String,
+    var combatPower: Int? = null
 ) {
     private fun addDamage(damage: Double) {
         amount += damage

@@ -41,8 +41,13 @@ const createMeterUI = ({ elList, dpsFormatter, getUserName, onClickUserRow }) =>
     dpsContainer.appendChild(dpsNumber);
     dpsContainer.appendChild(dpsContribution);
 
+    const combatPowerEl = document.createElement("div");
+    combatPowerEl.className = "combatPower";
+    combatPowerEl.style.display = "none";
+
     contentEl.appendChild(classIconEl);
     contentEl.appendChild(nameEl);
+    contentEl.appendChild(combatPowerEl);
     contentEl.appendChild(dpsContainer);
     rowEl.appendChild(fillEl);
     rowEl.appendChild(contentEl);
@@ -57,6 +62,7 @@ const createMeterUI = ({ elList, dpsFormatter, getUserName, onClickUserRow }) =>
       classIconImg,
       dpsNumber,
       dpsContribution,
+      combatPowerEl,
       fillEl,
       currentRow: null,
       lastSeenAt: 0,
@@ -174,6 +180,15 @@ const createMeterUI = ({ elList, dpsFormatter, getUserName, onClickUserRow }) =>
       view.dpsContribution.textContent = `${damageContribution.toFixed(1)}%`;
       const ratio = Math.max(0, Math.min(1, dps / topDps));
       view.fillEl.style.transform = `scaleX(${ratio})`;
+
+      // 전투력 표시
+      const cp = row.combatPower;
+      if (cp != null && cp > 0) {
+        view.combatPowerEl.textContent = `⚔ ${dpsFormatter.format(cp)}`;
+        view.combatPowerEl.style.display = "";
+      } else {
+        view.combatPowerEl.style.display = "none";
+      }
 
       elList.appendChild(view.rowEl);
     }

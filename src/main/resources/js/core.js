@@ -46,10 +46,15 @@ class DpsApp {
     this.settingsClose = document.querySelector(".settingsClose");
     this.settingsSave = document.querySelector(".settingsSave");
     this.settingsInput = document.querySelector(".settingsInput");
+    this.historyBtn = document.querySelector(".historyBtn");
+    this.historyPanel = document.querySelector(".historyPanel");
+    this.historyClose = document.querySelector(".historyClose");
+    this.historyListEl = document.querySelector(".historyList");
 
     this.bindHeaderButtons();
     this.bindDragToMoveWindow();
     this.bindSettingsUI();
+    this.bindHistoryUI();
 
     this.meterUI = createMeterUI({
       elList: this.elList,
@@ -245,6 +250,10 @@ class DpsApp {
         ? Math.round(contribRaw * 10) / 10
         : NaN;
 
+      // 전투력 (null이면 아직 조회 중 or 조회 실패)
+      const cpRaw = isObj ? value.combatPower : null;
+      const combatPower = (cpRaw != null && Number.isFinite(Number(cpRaw))) ? Math.trunc(Number(cpRaw)) : null;
+
       if (!Number.isFinite(dps)) {
         continue;
       }
@@ -255,6 +264,7 @@ class DpsApp {
         job,
         dps,
         damageContribution,
+        combatPower,
         isUser: name === this.USER_NAME,
       });
     }
@@ -418,6 +428,19 @@ class DpsApp {
       closeBtn: this.settingsClose,
       saveBtn: this.settingsSave,
       input: this.settingsInput,
+    });
+  }
+
+  bindHistoryUI() {
+    if (this.historyUI || typeof createHistoryUI !== "function") return;
+    this.historyUI = createHistoryUI({
+      panel: this.historyPanel,
+      closeBtn: this.historyClose,
+      listEl: this.historyListEl,
+      dpsFormatter: this.dpsFormatter,
+    });
+    this.historyBtn?.addEventListener("click", () => {
+      this.historyUI?.open?.();
     });
   }
 
