@@ -11,7 +11,13 @@ enum class JobClass(val className: String, val basicSkillCode: Int) {
     CHANTER("호법성", 18010000);
 
     companion object {
+        // 정령 기본공격 코드 → 정령성 귀속
+        private val SPIRIT_BASIC_ATTACK_CODES = setOf(100014, 100018, 100024, 100028, 100032, 100041, 100045, 100051, 100055)
+
         fun convertFromSkill(skillCode: Int): JobClass? {
+            if (skillCode in SPIRIT_BASIC_ATTACK_CODES) {
+                return ELEMENTALIST
+            }
             if (skillCode in 11000000..11999999) {
                 return GLADIATOR
             }

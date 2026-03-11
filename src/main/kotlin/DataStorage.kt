@@ -47,11 +47,11 @@ class DataStorage {
 
     fun appendNickname(uid: Int, nickname: String) {
         if (nicknameStorage[uid] != null && nicknameStorage[uid].equals(nickname)) return
+        // 기존 닉네임보다 짧은 닉네임은 덮어쓰지 않음 (오파싱된 짧은 이름이 올바른 이름을 덮는 것 방지)
         if (nicknameStorage[uid] != null &&
-            nickname.toByteArray(Charsets.UTF_8).size == 2 &&
             nickname.toByteArray(Charsets.UTF_8).size < nicknameStorage[uid]!!.toByteArray(Charsets.UTF_8).size
         ) {
-            logger.debug("닉네임 등록 시도 취소 {} -x> {}",nicknameStorage[uid],nickname)
+            logger.debug("닉네임 등록 시도 취소(짧음) {} -x> {}",nicknameStorage[uid],nickname)
             return
         }
         logger.debug("닉네임 등록 {} -> {}",nicknameStorage[uid],nickname)

@@ -52,6 +52,7 @@ class StreamProcessor(private val dataStorage: DataStorage) {
     }
 
     private fun parseBrokenLengthPacket(packet: ByteArray, flag: Boolean = true) {
+        if (packet.size < 4) return  // 크래시 방지: 최소 4바이트 미만 패킷 무시
         if (packet[2] != 0xff.toByte() || packet[3] != 0xff.toByte()) {
             logger.trace("b잔여패킷: {}", toHex(packet))
             val target = dataStorage.getCurrentTarget()
@@ -160,8 +161,7 @@ class StreamProcessor(private val dataStorage: DataStorage) {
         if (!regex.matches(nickname)) return false
         val onlyNumbers = Regex("^[0-9]+$")
         if (onlyNumbers.matches(nickname)) return false
-        val oneAlphabet = Regex("^[A-Za-z]$")
-        return !oneAlphabet.matches(nickname)
+        return true  // 영문 1글자 닉네임(예: V)도 유효
     }
 
     private fun parsePerfectPacket(packet: ByteArray) {
@@ -314,13 +314,35 @@ class StreamProcessor(private val dataStorage: DataStorage) {
 
         val opcodeIdx = findArrayIndex(afterPacket, 0x07, 0x02, 0x06)
         if (opcodeIdx == -1) return false
-        offset = keyIdx + opcodeIdx + 11
 
-        if (offset + 2 > packet.size) return false
-        val realActorId = parseUInt16le(packet, offset)
+        // realActorId 추출: 기본 오프셋(+11) 기준 ±2 범위에서 닉네임 검증 후 선택
+        // 구조: [0xFF*8][...][0x07 0x02 0x06][realActorId 2bytes]
+        // 실제 프로토콜 변경에 대비해 인접 오프셋도 시도
+        val baseOffset = keyIdx + opcodeIdx + 11
+        val nicknameData = dataStorage.getNickname()
+        var realActorId: Int? = null
+
+        for (delta in listOf(0, 1, -1, 2, -2)) {
+            val candidateOffset = baseOffset + delta
+            if (candidateOffset < 0 || candidateOffset + 2 > packet.size) continue
+            val candidateId = parseUInt16le(packet, candidateOffset)
+            if (candidateId > 0 && nicknameData.containsKey(candidateId)) {
+                realActorId = candidateId
+                logger.debug("소환몹 realActorId 닉네임 검증 성공 offset+{} id={}", delta, candidateId)
+                break
+            }
+        }
+        // 닉네임 검증 실패 시 기본 오프셋 그대로 사용 (폴백)
+        if (realActorId == null) {
+            if (baseOffset + 2 > packet.size) return false
+            val fallbackId = parseUInt16le(packet, baseOffset)
+            if (fallbackId <= 0) return false
+            realActorId = fallbackId
+            logger.debug("소환몹 realActorId 폴백 사용 id={}", fallbackId)
+        }
 
         logger.debug("소환몹 맵핑 성공 {},{}", realActorId, summonInfo.value)
-        dataStorage.appendSummon(realActorId, summonInfo.value)
+        dataStorage.appendSummon(realActorId!!, summonInfo.value)
         return true
     }
 

@@ -28,6 +28,7 @@
           </div>
 
           <div class="headerBtns">
+            <div class="headerBtn historyBtn"><i data-lucide="history"></i></div>
             <div class="headerBtn settingsBtn"><i data-lucide="settings"></i></div>
             <div class="headerBtn resetBtn"><i data-lucide="rotate-ccw"></i></div>
             <div class="headerBtn collapseBtn">
@@ -92,6 +93,18 @@
             </div>
           </div>
         </div>
+        <div
+          class="historyPanel"
+          role="dialog"
+          aria-modal="true">
+          <div class="historyHeader">
+            <div class="historyTitle">이전 전투 기록</div>
+            <div class="closeX historyClose">×</div>
+          </div>
+          <div class="historyBody">
+            <div class="historyList"></div>
+          </div>
+        </div>
         <div class="list"></div>
         <div class="battleTime">
           <div class="status"></div>
@@ -132,6 +145,7 @@
     <script src="./js/battleTime.js"></script>
     <script src="./js/meter.js"></script>
     <script src="./js/details.js"></script>
+    <script src="./js/history.js"></script>
 
     <script src="./js/checkRelease.js"></script>
     <script src="./js/settings.js"></script>
