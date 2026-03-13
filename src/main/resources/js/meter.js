@@ -161,9 +161,9 @@ const createMeterUI = ({ elList, dpsFormatter, getUserName, onClickUserRow }) =>
       const damageContribution = Number(row.damageContribution) || 0;
 
       let contributionClass = "";
-      if (dps > 0 && damageContribution < 3) {
+      if (damageContribution < 3) {
         contributionClass = "error";
-      } else if (dps > 0 && damageContribution < 5) {
+      } else if (damageContribution < 5) {
         contributionClass = "warning";
       }
       if (view.prevContribClass !== contributionClass) {
@@ -176,8 +176,8 @@ const createMeterUI = ({ elList, dpsFormatter, getUserName, onClickUserRow }) =>
         view.prevContribClass = contributionClass;
       }
 
-      view.dpsNumber.textContent = dps > 0 ? `${dpsFormatter.format(dps)}/초` : "";
-      view.dpsContribution.textContent = dps > 0 ? `${damageContribution.toFixed(1)}%` : "";
+      view.dpsNumber.textContent = `${dpsFormatter.format(dps)}/초`;
+      view.dpsContribution.textContent = `${damageContribution.toFixed(1)}%`;
       const ratio = Math.max(0, Math.min(1, dps / topDps));
       view.fillEl.style.transform = `scaleX(${ratio})`;
 
