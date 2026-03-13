@@ -59,8 +59,7 @@ class PcapCapturer(private val config: PcapCapturerConfig, private val channel: 
             exitProcess(1)
         }
         val handle = nif.openLive(config.snapshotSize, PcapNetworkInterface.PromiscuousMode.PROMISCUOUS, config.timeout)
-        // 서버 IP 필터 제거 → 서버 IP 변경에도 작동하도록. dst host = 수신만 캡처(서버→클라이언트)
-        val filter = "tcp port ${config.serverPort} and dst host $ip"
+        val filter = "src net ${config.serverIp} and port ${config.serverPort}"
         handle.setFilter(filter, BpfProgram.BpfCompileMode.OPTIMIZE)
         logger.info("패킷필터 설정 \"$filter\"")
         val listener = PacketListener { packet ->
