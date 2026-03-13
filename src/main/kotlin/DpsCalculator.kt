@@ -894,6 +894,18 @@ class DpsCalculator(private val dataStorage: DataStorage) {
         dpsData.targetName = targetData.second
         val battleTime = targetInfoMap[currentTarget]?.parseBattleTime() ?: 0
         val nicknameData = dataStorage.getNickname()
+
+        // 전투 참여 여부와 무관하게 저장된 모든 닉네임 전투력 조회 트리거
+        // → 파티신청 패킷에서 추출된 닉네임도 즉시 조회 시작
+        nicknameData.values.forEach { nick ->
+            if (!combatPowerByNickname.containsKey(nick)) {
+                combatPowerByNickname[nick] = null
+                CombatPowerFetcher.fetchAsync(nick) { cp ->
+                    combatPowerByNickname[nick] = cp
+                }
+            }
+        }
+
         if (battleTime == 0L) {
             return dpsData
         }

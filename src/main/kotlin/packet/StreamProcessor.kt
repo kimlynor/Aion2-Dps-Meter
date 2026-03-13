@@ -385,7 +385,7 @@ class StreamProcessor(private val dataStorage: DataStorage) {
         val np = packet.copyOfRange(offset + 1, offset + nicknameLength + 1)
 
         logger.debug("0번 패턴에서 발견된 확정 닉네임 {}", String(np, Charsets.UTF_8))
-        dataStorage.appendNickname(playerInfo.value, String(np, Charsets.UTF_8))
+        dataStorage.appendNickname(playerInfo.value, String(np, Charsets.UTF_8), confirmed = true)
 
         return true
     }
@@ -453,7 +453,10 @@ class StreamProcessor(private val dataStorage: DataStorage) {
             5 -> 12
             6 -> 10
             7 -> 14
-            else -> return false
+            else -> {
+                logger.debug("미지원 switchVar andResult={} (switchInfo={}), 패킷 스킵", andResult, switchInfo.value)
+                return false
+            }
         }
         if (start+tempV > packet.size) return false
         pdp.setSpecials(parseSpecialDamageFlags(packet.copyOfRange(start, start + tempV)))
