@@ -174,7 +174,8 @@ class DpsApp {
 
     const showByServer = rows.length > 0;
     if (this.resetPending) {
-      const resetAck = rows.length === 0;
+      // battleTime 기준으로 reset 완료 감지 (rows에 파티원 CP행이 있어도 battleTime=0이면 reset 완료)
+      const resetAck = (battleTimeMs ?? 0) <= 0;
 
       this._battleTimeVisible = false;
       this.battleTime.setVisible(false);

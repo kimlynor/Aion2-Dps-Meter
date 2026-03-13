@@ -907,6 +907,13 @@ class DpsCalculator(private val dataStorage: DataStorage) {
         }
 
         if (battleTime == 0L) {
+            // 전투 시작 전이어도 CP가 조회된 파티원은 미터기에 표시
+            nicknameData.forEach { (uid, nick) ->
+                val cp = combatPowerByNickname[nick]
+                if (cp != null) {
+                    dpsData.map[uid] = PersonalData(nickname = nick, combatPower = cp)
+                }
+            }
             return dpsData
         }
         val currentTargetPackets = pdpMap[currentTarget] ?: return dpsData  // 리셋 직후 크래시 방지
