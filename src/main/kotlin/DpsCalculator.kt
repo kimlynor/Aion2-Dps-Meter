@@ -950,8 +950,8 @@ class DpsCalculator(private val dataStorage: DataStorage) {
             if (currentEntry.job == "") {
                 val origSkillCode = inferOriginalSkillCode(pdp.getSkillCode1()) ?: -1
                 val job = JobClass.convertFromSkill(origSkillCode)
-                // 닉네임이 확인된 플레이어만 직업 할당 → 소환수가 별도 인원으로 뜨는 버그 수정 (Bug 2 수정)
-                if (job != null && dataStorage.getSummonData()[uid] == null && nicknameData[uid] != null) {
+                // 소환수가 별도 인원으로 뜨는 버그 수정 - 닉네임 여부와 무관하게 스킬코드로 직업 판별
+                if (job != null && dataStorage.getSummonData()[uid] == null) {
                     currentEntry.job = job.className
                 }
             }
